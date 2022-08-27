@@ -1,0 +1,5 @@
+zcc rules.c
+zcc tts.c
+zcc ttsmain.c
+asz8k -o inout.o inout.8kn
+ld8k -w -s -o say.z8k startup.o rules.o tts.o ttsmain.o inout.o -lcpm

@@ -99,6 +99,19 @@ Rules = {
         ( Anything,      "@",            Anything,       "AE t"  )
         ],
 
+    'number':[
+        ( Anything,      "0",            Anything,       "z IH r OW"   ),
+        ( Anything,      "1",            Anything,       "w AH n"   ),
+        ( Anything,      "2",            Anything,       "t UW"   ),
+        ( Anything,      "3",            Anything,       "TH r IY"   ),
+        ( Anything,      "4",            Anything,       "f OW r"   ),
+        ( Anything,      "5",            Anything,       "f AY v"   ),
+        ( Anything,      "6",            Anything,       "s IH k s"   ),
+        ( Anything,      "7",            Anything,       "s EH v AX n"   ),
+        ( Anything,      "8",            Anything,       "EY t"   ),
+        ( Anything,      "9",            Anything,       "n AY n"   ),
+        ],        
+
 #       Left part        Match Part      Right Part      Out Part
     'A':[
         ( Anything,      "A",            Nothing,        "AX"    ),
@@ -127,7 +140,7 @@ Rules = {
         ( Anything,      "AY",           Anything,       "EY"    ),
         ( Anything,      "AU",           Anything,       "AO"    ),
         ( "#:",          "AL",           Nothing,        "AX l"   ),
-        ( "#:",          "ALS",          Nothing,        "AX lz"  ),
+        ( "#:",          "ALS",          Nothing,        "AX l z"  ),
         ( Anything,      "ALK",          Anything,       "AO k"   ),
         ( Anything,      "AL",           "^",            "AO l"   ),
         ( " :",          "ABLE",         Anything,       "EY b AX l"),
@@ -416,7 +429,7 @@ Rules = {
         ( Anything,      "SUR",          "#",            "SH ER"  ),
         ( "#",           "SU",           "#",            "ZH UW"  ),
         ( "#",           "SSU",          "#",            "SH UW"  ),
-        ( "#",           "SED",          Nothing,        "zd"    ),
+        ( "#",           "SED",          Nothing,        "z d"    ),
         ( "#",           "S",            "#",            "z"     ),
         ( Anything,      "SAID",         Anything,       "s EH d"  ),
         ( "^",           "SION",         Anything,       "SH AX n" ),
