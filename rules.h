@@ -1,3 +1,6 @@
+#ifndef _RULES_H
+#define _RULES_H
+
 typedef struct rule {
   char *left;
   char *match;
@@ -16,3 +19,5 @@ typedef char PHONEME;
 extern rule rules[];
 extern int rulemap[128];
 extern char *phones[];
+
+#endif

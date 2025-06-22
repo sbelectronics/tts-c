@@ -7,8 +7,9 @@
  * zcc rules.c
  * zcc tts.c
  * zcc ttsmain.c
+ * zcc outphon.c
  * asz8k -o inout.o inout.8kn
- * ld8k -w -s -o say.z8k startup.o rules.o tts.o ttsmain.o inout.o -lcpm 
+ * ld8k -w -s -o say.z8k startup.o rules.o tts.o ttsmain.o inout.o outphon.o -lcpm 
  * 
  * zcc compiler is kinda weird, and some weirdisms are in this C source to deal
  * with it.
@@ -16,45 +17,38 @@
 
 #include <stdio.h>
 #include "tts.h"
+#include "outphon.h"
 #include "rules.h"
 
 #ifdef LINUX
-#include <string.h>
-#endif
-
-#ifndef LINUX
+#else
+#ifdef ISIS
+#define __STDC_ABI_ONLY
+#include <stdlib.h> /* exit(), inp(), outp() */
+#else
+#ifdef MULTIBUS
+/* no imports */
+#else
+#ifdef OLIVETTI
+#include "oliport.h"
+#else
+#ifdef H8_80186
+#include <process.h>
+#include <conio.h>
+#else
 /* CP/M-8000 turn off stuff we don't need. It only saves about 4K. */
 #include "option.h"
 NOLONG NOFLOAT NOFILESZ NOASCII
-
-/* Z8000 port input and output functions, linked from assembly */
-VOIDRET outp(x,y);
-char inp(x);
+#endif
+#endif
+#endif
+#endif
 #endif
 
 #define ISSPACE(c) (((c)==' ') || ((c)=='\t') || ((c)=='\r') || ((c)=='\n'))
 
 int quiet=0;
-
-VOIDRET outPhon(phon)
-char phon;
-{
-#ifndef LINUX
-    /* Z8000 phoneme output function.
-     *
-     * My SP0256 is on port 0x59, and my status readback is on the same
-     * port. I don't use interrupts. I poll.
-     *
-     * For some future person who wants to reuse this with whatever your
-     * personal text-to-speech project is, this is where you write your
-     * routine to interact with your SP0256A-AL2 ic.
-     */
-    while ((inp(0x59)&4)==4) {
-       /* busy wait while phoneme is speaking */
-    }
-    outp(0x59, phon);
-#endif
-}
+int noDevice=0; /* if set, don't output to the device */
 
 int speakLine(s)
 char *s;
@@ -79,11 +73,12 @@ char *s;
 
             addPhoneme(3); /* add PA4 */
 
-            speakPhoneme(outPhon, !quiet);
+            speakPhoneme(!noDevice, !quiet);
 
             *s = tmp;
         }
     }
+    return 0;
 }
 
 char line[1024];
@@ -91,7 +86,8 @@ char line[1024];
 VOIDRET banner()
 {
     printf("say.z8k by Scott M Baker, www.smbaker.com\n");
-    printf("use -h for command-line help\n\n");
+    printf("use -h for command-line help\n");
+    printf("type 'bye' to exit interactive mode\n\n");
     VOIDRETURN;
 }
 
@@ -104,8 +100,49 @@ VOIDRET usage()
     printf("\noptions:\n");
     printf("  -d ... debug\n");
     printf("  -q ... quiet\n");
+    printf("  -r ... repeat the last line\n");
+    printf("  -n ... no device\n");
+    printf("  -h ... this help\n");
     exit(0);
     VOIDRETURN;
+}
+
+int myToLower(c) 
+    char c;
+{
+    if (c >= 'A' && c <= 'Z') {
+        return c + ('a' - 'A');
+    } else {
+        return c;
+    }
+}
+
+int isBye(s)
+    char *s;
+{
+    if (myToLower(*s) != 'b') {
+        return 0;
+    }
+    s++;
+    if (myToLower(*s) != 'y') {
+        return 0;
+    }
+    s++;
+    if (myToLower(*s) != 'e') {
+        return 0;
+    }
+    return 1;
+}
+
+int isFlag(s,f)
+    char *s;
+    char f;
+{
+    if ((*s!='-') && (*s!='/')) {
+        return 0;
+    }
+    s++;
+    return (myToLower(*s) == f);
 }
 
 VOIDRET speakStream(f, prompt)
@@ -121,7 +158,13 @@ int prompt;
         res = fgets(line, sizeof(line)-1, f);
         if (res == NULL) {
             /* EOF */
-            return 0;
+            VOIDRETURN;
+        }
+        if (isBye(line)) {
+            /* mostly for ISIS as I didn't have another good way to break out.
+             * avoided using stricmp due to portability issues.
+             */
+            VOIDRETURN;            
         }
         speakLine(line);
         printf("\n");
@@ -132,6 +175,9 @@ int prompt;
 VOIDRET speakFile(fn)
 char *fn;
 {
+#ifdef ISIS
+    printf("file mode unsupported\n");
+#else
     FILE *f = fopen(fn, "rt");
 
     if (f==NULL) {
@@ -143,6 +189,7 @@ char *fn;
 
     fclose(f);
     VOIDRETURN;
+#endif
 }
 
 int main(argc, argv)
@@ -150,18 +197,24 @@ int argc;
 char **argv;
 {
     int fileMode = 0;
+    int repeat = 0;
     int noninteractive = 0;
     int i;
 
+again:
     for (i=1; i<argc; i++) {
-        if ((strcmp(argv[i],"-h")==0) || (strcmp(argv[i],"-H")==0)) {
+        if (isFlag(argv[i], 'h')) {
             usage();
-        } else if ((strcmp(argv[i],"-f")==0) || (strcmp(argv[i],"-F")==0)) {
+        } else if (isFlag(argv[i], 'f')) {
             fileMode=1;
-        } else if ((strcmp(argv[i],"-d")==0) || (strcmp(argv[i],"-D")==0)) {
+        } else if (isFlag(argv[i], 'd')) {
             setDebug(1);
-        } else if ((strcmp(argv[i],"-q")==0) || (strcmp(argv[i],"-Q")==0)) {
+        } else if (isFlag(argv[i], 'q')) {
             quiet=1;
+        } else if (isFlag(argv[i], 'r')) {
+            repeat=1;
+        } else if (isFlag(argv[i], 'n')) {
+            noDevice=1;
         } else {
             if (fileMode) {
                 speakFile(argv[i]);
@@ -171,11 +224,18 @@ char **argv;
             noninteractive=1;
         }
     }
+    if (repeat) {
+        goto again;
+    }
     
     if (!noninteractive) {
         banner();
         speakStream(stdin, 1);
     }
 
-    return 0;
+    if (!quiet) {
+        printf("\n");
+    }
+
+    return 0;  
 }

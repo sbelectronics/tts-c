@@ -8,9 +8,24 @@
 #include <stdio.h>
 #include "rules.h"
 #include "tts.h"
+#include "outphon.h"
 
 #ifdef LINUX
 #include <string.h>
+#else
+#ifdef ISIS
+#include <string.h>
+#else
+#ifdef OLIVETTI
+#include <string.h>
+#else
+#ifdef H8_80186
+#include <string.h>
+#else
+/* CPM8K stuff here */
+#endif
+#endif
+#endif
 #endif
 
 /* watch out for side effects in the argument when using these macros */
@@ -65,15 +80,15 @@ VOIDRET resetPhoneme()
 }
 
 /* speak the phoneme buffer. Calls the callback to talk to the IC. */
-VOIDRET speakPhoneme(cb,prt)
-OutPhonFn cb;
+VOIDRET speakPhoneme(speak,prt)
+int speak;
 int prt;
 {
     int i;
     
     for(i=0; i<phonCount; i++) {
-        if (cb) {
-            cb(phonBuf[i]);
+        if (speak) {
+            outPhon(phonBuf[i]);
         }
         if (prt) {
             printf("%s ", phones[phonBuf[i]]);
@@ -84,7 +99,7 @@ int prt;
 /* print the phoneme buffer */
 VOIDRET printPhoneme()
 {
-    speakPhoneme(NULL, 1);
+    speakPhoneme(0, 1);
 }
 
 int lrMatch(pattern, context, right)
@@ -320,7 +335,7 @@ char *s;
     *(w++) = ' ';
     while ((*s) && (wLen < MAX_WLEN)) {
         if (ISLOWER(*s)) {
-            *(w++) = *s-'a'+'A';
+            *(w++) = *s - 'a' + 'A';
         } else {
             *(w++) = *s;
         }
