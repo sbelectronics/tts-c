@@ -4,15 +4,19 @@
  * 
  * Based on Retrospeak by Jason Lane
  *
- * zcc rules.c
- * zcc tts.c
- * zcc ttsmain.c
- * zcc outphon.c
- * asz8k -o inout.o inout.8kn
- * ld8k -w -s -o say.z8k startup.o rules.o tts.o ttsmain.o inout.o outphon.o -lcpm 
+ * Z8000 instructions
+ *   zcc rules.c
+ *   zcc tts.c
+ *   zcc ttsmain.c
+ *   zcc outphon.c
+ *   asz8k -o inout.o inout.8kn
+ *   ld8k -w -s -o say.z8k startup.o rules.o tts.o ttsmain.o inout.o outphon.o -lcpm 
  * 
- * zcc compiler is kinda weird, and some weirdisms are in this C source to deal
- * with it.
+ *   zcc compiler is kinda weird, and some weirdisms are in this C source to deal
+ *   with it.
+ * 
+ * Multibus / iRMX-86 instructions
+ *    Run the commands in bsay.csd
  */
 
 #include <stdio.h>
@@ -85,7 +89,27 @@ char line[1024];
 
 VOIDRET banner()
 {
-    printf("say.z8k by Scott M Baker, www.smbaker.com\n");
+#ifdef LINUX
+    printf("say for Linux by Scott M Baker, www.smbaker.com\n");
+#else
+#ifdef ISIS
+    printf("say for ISIS by Scott M Baker, www.smbaker.com\n");
+#else
+#ifdef MULTIBUS
+    printf("say for Multibus by Scott M Baker, www.smbaker.com\n");
+#else
+#ifdef OLIVETTI
+    printf("say for Olivetti M20 by Scott M Baker, www.smbaker.com\n");
+#else
+#ifdef H8_80186
+    printf("say for H8-80186 by Scott M Baker, www.smbaker.com\n");
+#else
+    printf("say for Z8000 Clover by Scott M Baker, www.smbaker.com\n");
+#endif
+#endif
+#endif
+#endif
+#endif
     printf("use -h for command-line help\n");
     printf("type 'bye' to exit interactive mode\n\n");
     VOIDRETURN;
